@@ -4,6 +4,8 @@ import { SidebarProvider } from "./context/SidebarContext";
 import AdminDashboard from "./pages/AdminDashboard";
 import PrivateRoutes from "../src/utils/PrivateRoutes";
 import RoleBaseRoutes from "../src/utils/RoleBaseRoutes"
+import Customer from "./pages/customer/Customer";
+import LoanSummary from "./pages/customer/LoanSummary";
 
 function App() {
 
@@ -21,6 +23,8 @@ function App() {
               </RoleBaseRoutes>
             </PrivateRoutes>
           } />
+          <Route path="/customer" element={<Customer/>} />
+          <Route path="/loan-summary/:id" element={<LoanSummary/>} />
     </Routes>
     </SidebarProvider>
    

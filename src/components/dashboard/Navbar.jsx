@@ -53,7 +53,7 @@ const Navbar = () => {
               &times;
             </button>
 
-            <h2 className="text-3xl font-semibold text-gray-800 mb-4">Are you sure want to logout?</h2>
+            <h2 className="text-3xl font-semibold text-gray-600 mb-4">Are you sure want to logout?</h2>
             <p className="text-gray-600 mb-6">This action will end your current session.</p>
 
             <div className="flex justify-center gap-14">
