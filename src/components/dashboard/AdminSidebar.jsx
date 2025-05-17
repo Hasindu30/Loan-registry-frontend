@@ -16,7 +16,7 @@ const AdminSidebar = () => {
 
   return (
     <div
-      className={`fixed top-0 left-0 z-50 h-screen bg-zinc-900 text-white shadow-md transition-all duration-300 ease-in-out overflow-hidden ${isHovered ? 'w-64' : 'w-20'}`}
+      className={`fixed top-0 left-0 z-50 h-screen bg-zinc-800 text-white shadow-md transition-all duration-300 ease-in-out overflow-hidden ${isHovered ? 'w-64' : 'w-20'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

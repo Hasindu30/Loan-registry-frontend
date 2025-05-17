@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import AdminSidebar from '../../components/dashboard/AdminSidebar';
 import Navbar from '../../components/dashboard/Navbar';
 import DataTable from 'react-data-table-component';
-import { Plus } from 'lucide-react';
 import { useSidebar } from '../../context/SidebarContext';
 import SidePopup from '../../components/dashboard/common/SidePopup';
 import { toast, ToastContainer } from 'react-toastify';
@@ -12,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 const LoanSummary = () => {
   const { isHovered } = useSidebar();
@@ -22,15 +22,45 @@ const LoanSummary = () => {
   const [search, setSearch] = useState('');
   const [filteredData, setFilteredData] = useState([]);
   const [paymentData, setPaymentData] = useState([]);
+   const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
    const [selectedLoanId, setSelectedLoanId] = useState(null); 
 const [isLoanPopupOpen, setIsLoanPopupOpen] = useState(false);
 const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
-
- 
-
-  
+const [selectedPaymentId, setSelectedPaymentId] = useState(null);
+ const [loanToDelete, setLoanToDelete] = useState(null);
+const [isPaymentDeletePopupOpen, setIsPaymentDeletePopupOpen] = useState(false);
+const [paymentToDelete, setPaymentToDelete] = useState(null);
+const [selectedYear, setSelectedYear] = useState('');
+const [selectedMonth, setSelectedMonth] = useState('');
+const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+const months = [
+  { value: '01', label: 'January' }, { value: '02', label: 'February' },
+  { value: '03', label: 'March' },   { value: '04', label: 'April' },
+  { value: '05', label: 'May' },     { value: '06', label: 'June' },
+  { value: '07', label: 'July' },    { value: '08', label: 'August' },
+  { value: '09', label: 'September' }, { value: '10', label: 'October' },
+  { value: '11', label: 'November' },  { value: '12', label: 'December' },
+];
+  const formatCurrency = (num) => {
+  if (isNaN(num)) return '0.00';
+  return Number(num).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+useEffect(() => {
+  if (search.trim() === '') {
+    setFilteredData(data);
+  } else {
+    const lowerSearch = search.toLowerCase();
+    const filtered = data.filter(item =>
+      item.loanName.toLowerCase().includes(lowerSearch)
+    );
+    setFilteredData(filtered);
+  }
+}, [search, data]);
 
   useEffect(() => {
     fetchLoans();
@@ -44,7 +74,7 @@ const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
         
       });
       setData(response.data);
-      
+      setFilteredData(response.data);
       setLoading(false);
     } catch (error) {
       console.error(error);
@@ -65,19 +95,70 @@ const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
     toast.error("Failed to load payments");
   }
 };
+const handleDeletePayment = (id) => {
+  setPaymentToDelete(id);
+  setIsPaymentDeletePopupOpen(true);
+};
+console.log(location.state);
+const confirmDeletePayment = async () => {
+  if (!paymentToDelete) return;
+
+  try {
+    await axios.delete(`/api/paymentDelete/${paymentToDelete}`);
+    toast.success("Payment deleted successfully");
+    fetchPayments();
+  } catch (err) {
+    toast.error("Failed to delete payment");
+  } finally {
+    setIsPaymentDeletePopupOpen(false);
+    setPaymentToDelete(null);
+  }
+};
+const handleEditPayment = (payment) => {
+  setSelectedPaymentId(payment._id);
+  setIsPaymentPopupOpen(true);
+  setIsEditMode(true);
+
+  const formattedDate = new Date(payment.date).toISOString().slice(0, 10);
+
+  setPaymentValue('PaymentAmount', payment.amount); 
+  setPaymentValue('paymentDate', formattedDate);
+};
+
   const handleEdit = (row) => {
       setIsEditMode(true);                   
       setSelectedLoanId(row._id);         
-      setIsPopupOpen(true);                  
+      setIsLoanPopupOpen(true);                  
     
       // Prefill data
-      
-      setValue('loanName', row.loanName);
-      setValue('date', row.date);
-      setValue('amount', row.amount);
-      setValue('remarks', row.remarks);
+       const dateObj = new Date(row.date);
+  const formattedDate = dateObj.toISOString().slice(0, 10); 
+
+      setLoanValue('loanName', row.loanName);
+       setLoanValue('amount', row.amount);
+       setLoanValue('date', formattedDate);
+      setLoanValue('remarks', row.remarks || '');
       
     };
+const handleDelete = (id) => {
+  setLoanToDelete(id);
+  setIsDeletePopupOpen(true);
+};
+const confirmDelete = async () => {
+  if (!loanToDelete) return;
+  try {
+    await axios.delete(`/api/loanDelete/${loanToDelete}`);
+    toast.success("Loan deleted successfully");
+    fetchLoans();
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to delete loan");
+  } finally {
+    setIsDeletePopupOpen(false);
+    setLoanToDelete(null);
+  }
+};
+
   const loanSchema = yup.object().shape({
   loanName: yup.string().required('Loan name is required'),
   amount: yup
@@ -109,6 +190,7 @@ const {
   register: registerPayment,
   handleSubmit: handleSubmitPayment,
   reset: resetPayment,
+  setValue: setPaymentValue, 
   formState: { errors: paymentErrors }
 } = useForm({ resolver: yupResolver(paymentSchema) });
 
@@ -120,20 +202,32 @@ useEffect(() => { fetchPayments(); }, [customerCode, isPaymentPopupOpen]);
 const onSubmit = async (data) => {
   if (isPaymentPopupOpen) {
     try {
+    if (selectedPaymentId) {
+      await axios.put(`/api/paymentUpdate/${selectedPaymentId}`, {
+        customerCode,
+        amount: data.PaymentAmount,
+        date: data.paymentDate,
+      });
+      toast.success("Payment updated");
+    } else {
       await axios.post('/api/payments', {
         customerCode,
-         date: data.paymentDate,     
-          amount: data.PaymentAmount  
+        amount: data.PaymentAmount,
+        date: data.paymentDate,
       });
       toast.success("Payment added");
-      setIsPaymentPopupOpen(false);
-      fetchPayments();
-      resetPayment();
-    } catch (err) {
-      toast.error("Failed to add payment");
     }
-    return;
+
+    setIsPaymentPopupOpen(false);
+    setSelectedPaymentId(null);
+    fetchPayments();
+    resetPayment();
+  } catch (err) {
+    toast.error("Failed to save payment");
   }
+  return;
+}
+
     const LoanData = {
       loanName:data.loanName,
       date:data.date,
@@ -172,55 +266,80 @@ const onSubmit = async (data) => {
       });
     }
   };
+  
  const onSubmitLoan = (data) => onSubmit(data);
 const onSubmitPayment = (data) => onSubmit(data);
-  // const onSubmit = async (data) => {
-  //   try {
-  //     await axios.post(`${import.meta.env.VITE_API_BASE_URL}/loans`, data);
-  //     toast.success('Loan created successfully!');
-  //     setIsPopupOpen(false);
-  //     reset();
-  //   } catch (error) {
-  //     console.error(error);
-  //     toast.error('Failed to create loan');
-  //   }
-  // };
+
 
   const loanColumns = [
     { name: 'Loan Name', selector: (row) => row.loanName, sortable: true },
     { name: 'Date', selector: (row) => new Date(row.date).toLocaleDateString(), sortable: true },
-    { name: 'Amount', selector: (row) => `Rs. ${row.amount.toLocaleString()}`, sortable: true },
+   { name: 'Amount', selector: (row) => `Rs. ${formatCurrency(row.amount)}`, sortable: true },
     { name: 'Remarks', selector: (row) => row.remarks || '-', sortable: true },
-    //  {
-    //   name: "Action",
-    //   cell: (row) => (
-    //     <div className="flex gap-3">
-    //       <button
-    //         onClick={() => handleEdit(row)}
-    //         className="text-blue-500 hover:text-blue-700"
-    //       >
-    //         <Pencil size={18} />
-    //       </button>
-    //       <button
-    //         onClick={() => handleDelete(row._id)}
-    //         className="text-red-500 hover:text-red-700"
-    //       >
-    //         <Trash2 size={18} />
-    //       </button>
-    //     </div>
-    //   ),
-    //   ignoreRowClick: true,   
-    // }
+     {
+      name: "Action",
+      cell: (row) => (
+        <div className="flex gap-3">
+          <button
+            onClick={() => handleEdit(row)}
+            className="text-blue-500 hover:text-blue-700"
+          >
+            <Pencil size={18} />
+          </button>
+          <button
+            onClick={() => handleDelete(row._id)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div>
+      ),
+      ignoreRowClick: true,   
+    }
   ];
 
   const paymentColumns = [
     { name: 'Payment Date', selector: (row) => new Date(row.date).toLocaleDateString('en-CA'), sortable: true },
-    { name: 'Amount', selector: (row) => `Rs. ${row.amount.toLocaleString()}`, sortable: true },
+    { name: 'Amount', selector: (row) => `Rs. ${formatCurrency(row.amount)}`, sortable: true, },
+    {
+  name: "Action",
+  cell: (row) => (
+    <div className="flex gap-2">
+      <button onClick={() => handleEditPayment(row)} className="text-blue-500 hover:text-blue-700">
+        <Pencil size={16} />
+      </button>
+      <button onClick={() => handleDeletePayment(row._id)} className="text-red-500 hover:text-red-700">
+        <Trash2 size={16} />
+      </button>
+    </div>
+  ),
+  ignoreRowClick: true,
+}
   ];
 
  const totalLoanAmount = data.reduce((sum, item) => sum + (item.amount || 0), 0);
   const totalPaidAmount = paymentData.reduce((sum, item) => sum + item.amount, 0);
   const remainingAmount = totalLoanAmount - totalPaidAmount;
+  const handleSearch = (value) => {
+  setSearch(value);
+  if (!value.trim()) {
+    setFilteredData(data);
+  } else {
+    const filtered = data.filter((item) =>
+      item.loanName?.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredData(filtered);
+  }
+};
+useEffect(() => {
+  const filtered = data.filter((item) => {
+    const date = new Date(item.date);
+    const yearMatch = selectedYear ? date.getFullYear().toString() === selectedYear : true;
+    const monthMatch = selectedMonth ? (`0${date.getMonth() + 1}`).slice(-2) === selectedMonth : true;
+    return yearMatch && monthMatch;
+  });
+  setFilteredData(filtered);
+}, [data, selectedYear, selectedMonth]);
 
   return (
     <>
@@ -237,17 +356,26 @@ const onSubmitPayment = (data) => onSubmit(data);
         <form onSubmit={handleSubmitLoan(onSubmitLoan)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Loan Name <span className="text-red-500">*</span></label>
-            <input {...registerLoan('loanName')} type="text" className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="Enter Loan Name" />
+            <input {...registerLoan('loanName')} 
+            type="text" 
+            className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" 
+            placeholder="Enter Loan Name" />
             {loanErrors.loanName && <p className="text-red-500 text-xs">{loanErrors.loanName.message}</p>}
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Amount <span className="text-red-500">*</span></label>
-            <input {...registerLoan('amount')} type="number" className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="Enter Amount" />
+            <input 
+            {...registerLoan('amount')} 
+            type="number" 
+            step="0.01"
+            className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" 
+            placeholder="Enter Amount" />
             {loanErrors.amount && <p className="text-red-500 text-xs">{loanErrors.amount.message}</p>}
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Date <span className="text-red-500">*</span></label>
-            <input {...registerLoan('date')} type="date" className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" />
+            <input 
+            {...registerLoan('date')} type="date" className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" />
             {loanErrors.date && <p className="text-red-500 text-xs">{loanErrors.date.message}</p>}
           </div>
           <div className="flex flex-col gap-1">
@@ -264,10 +392,10 @@ const onSubmitPayment = (data) => onSubmit(data);
       <SidePopup
         isOpen={isPaymentPopupOpen}
         onClose={() => {
-    setIsPaymentPopupOpen(false);
-    resetPayment();
+        setIsPaymentPopupOpen(false);
+        resetPayment();
   }}
-        title={isEditMode ? 'Edit Payment' : 'Add Payment'}
+        title={selectedPaymentId ? 'Edit Payment' : 'Add Payment'}
       >
         <form onSubmit={handleSubmitPayment(onSubmitPayment)} className="flex flex-col gap-4">
           
@@ -275,6 +403,7 @@ const onSubmitPayment = (data) => onSubmit(data);
             <label className="text-sm font-medium text-gray-700">Amount <span className="text-red-500">*</span></label>
             <input {...registerPayment('PaymentAmount')} 
             type="number" 
+            step="0.01"
             className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="Enter Amount" />
             {paymentErrors.PaymentAmount && <p className="text-red-500 text-xs">{paymentErrors.PaymentAmount.message}</p>}
           </div>
@@ -294,6 +423,68 @@ const onSubmitPayment = (data) => onSubmit(data);
           </div>
         </form>
       </SidePopup>
+      <SidePopup
+  isOpen={isDeletePopupOpen}
+  onClose={() => {
+    setIsDeletePopupOpen(false);
+    setLoanToDelete(null);
+  }}
+  title="Delete Loan"
+>
+  <div className="flex flex-col items-center justify-center gap-6 p-6">
+    <p className="text-gray-700 text-center text-lg">
+      Are you sure you want to delete this loan?
+    </p>
+    <div className="flex justify-center gap-4">
+      <button
+        onClick={() => {
+          setIsDeletePopupOpen(false);
+          setLoanToDelete(null);
+        }}
+        className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={confirmDelete}
+        className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+      </SidePopup>
+      <SidePopup
+  isOpen={isPaymentDeletePopupOpen}
+  onClose={() => {
+    setIsPaymentDeletePopupOpen(false);
+    setPaymentToDelete(null);
+  }}
+  title="Delete Payment"
+>
+  <div className="flex flex-col items-center justify-center gap-6 p-6">
+    <p className="text-gray-700 text-center text-lg">
+      Are you sure you want to delete this payment?
+    </p>
+    <div className="flex justify-center gap-4">
+      <button
+        onClick={() => {
+          setIsPaymentDeletePopupOpen(false);
+          setPaymentToDelete(null);
+        }}
+        className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={confirmDeletePayment}
+        className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+      </SidePopup>
 
       <div className="flex min-h-screen bg-gray-100 text-gray-800">
         <AdminSidebar />
@@ -301,25 +492,53 @@ const onSubmitPayment = (data) => onSubmit(data);
           <Navbar />
           <div className="p-6 mt-10">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold">Loan Summary - {customerName} ({customerCode})</h2>
+              <h2 className="text-2xl font-bold">Loan Summary |   {customerName} ({customerCode})</h2>
             </div>
 
-            <div className="mb-4 flex justify-between items-center gap-4">
-              <input
-                type="text"
-                placeholder="Search loan type..."
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="border border-gray-300 px-3 py-1 rounded-md w-60 focus:outline-none focus:ring-2 focus:ring-teal-400"
-              />
-             <button onClick={() => setIsLoanPopupOpen(true)} className="bg-teal-600 text-white px-4 py-1 rounded hover:bg-teal-700 flex items-center gap-2 text-sm">
-                <Plus size={18} /> Add Loan
-              </button> 
-            </div>
+            <div className="mb-4 flex flex-wrap gap-4 justify-between items-center">
+  <div className="flex gap-4 items-center flex-wrap">
+    <input
+      type="text"
+      placeholder="Search..."
+      value={search}
+      onChange={(e) => handleSearch(e.target.value)}
+      className="bg-white border border-gray-200 px-3 py-1 rounded-md w-40 focus:outline-none focus:ring-1 focus:ring-teal-400"
+    />
+
+    <select
+      className="bg-white border border-gray-200 px-3 py-1 rounded-md w-30 focus:outline-none focus:ring-1 focus:ring-teal-400"
+      value={selectedYear}
+      onChange={(e) => setSelectedYear(e.target.value)}
+    >
+      <option value="">All Years</option>
+      {years.map((year) => (
+        <option key={year} value={year}>{year}</option>
+      ))}
+    </select>
+
+    <select
+      className="bg-white border border-gray-200 px-3 py-1 rounded-md w-30 focus:outline-none focus:ring-1 focus:ring-teal-400"
+      value={selectedMonth}
+      onChange={(e) => setSelectedMonth(e.target.value)}
+    >
+      <option value="">All Months</option>
+      {months.map((month) => (
+        <option key={month.value} value={month.value}>{month.label}</option>
+      ))}
+    </select>
+  </div>
+
+  <button
+    onClick={() => setIsLoanPopupOpen(true)}
+    className="bg-red-600 text-white px-3 py-2 rounded hover:bg-teal-700 flex items-center gap-2 text-sm"
+  >
+    <Plus size={18} /> Add Loan
+  </button>
+</div>
 
             <DataTable
               columns={loanColumns}
-              data={data}
+              data={filteredData}
               pagination
               highlightOnHover
               responsive
@@ -327,7 +546,7 @@ const onSubmitPayment = (data) => onSubmit(data);
                 headRow: { style: { minHeight: '40px' } },
                 headCells: {
                   style: {
-                    backgroundColor: '#0fcea0',
+                    backgroundColor: '#CD5C5C',
                     color: '#ffffff',
                     fontWeight: '600',
                     fontSize: '14px',
@@ -348,7 +567,7 @@ const onSubmitPayment = (data) => onSubmit(data);
             <div className="mt-10">
               <div className="mb-4 flex justify-between items-center">
                 <h3 className="text-xl font-bold">Loan Payment History</h3>
-                <button onClick={() => setIsPaymentPopupOpen(true)} className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-teal-700 flex items-center gap-2 text-sm">
+                <button onClick={() => setIsPaymentPopupOpen(true)} className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-teal-700 flex items-center gap-2 text-sm">
                 <Plus size={18} /> Add Payment
               </button> 
               </div>

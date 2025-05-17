@@ -56,13 +56,13 @@ const Customer = () => {
   };
   const validationSchema = yup.object().shape({
     empCode: yup.string().required('Customer Code is required'),
-    firstName: yup.string().required('First Name is required'),
-    lastName: yup.string().required('Last Name is required'),
+    firstName: yup.string(),
+    lastName: yup.string(),
     initialsName: yup.string().required('Name with Initials is required'),
     contact: yup
       .number()
       .typeError('Contact must be a number')
-      .required('Contact Number is required'),
+      ,
     address: yup.string(), 
   });
   const {
@@ -82,7 +82,7 @@ const Customer = () => {
     },
     {
       name: "Customer Name",
-      selector: (row) => `${row.firstName} ${row.lastName}`,
+      selector: (row) =>row.initialsName,
       sortable: true,
     },
     {
@@ -254,7 +254,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
   
   <div className="flex flex-col gap-1">
     <label className="text-sm font-medium text-gray-700">
-      First Name <span className="text-red-500">*</span>
+      First Name 
     </label>
     <input
       {...register('firstName')}
@@ -262,13 +262,13 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
       className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400"
       placeholder="Enter First Name"
     />
-    {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
+    
   </div>
 
  
   <div className="flex flex-col gap-1">
     <label className="text-sm font-medium text-gray-700">
-      Last Name <span className="text-red-500">*</span>
+      Last Name 
     </label>
     <input
       {...register('lastName')}
@@ -276,7 +276,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
       className="border rounded-md px-3 py-2 border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
       placeholder="Enter Last Name"
     />
-    {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
+    
   </div>
 
  
@@ -296,7 +296,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
   
   <div className="flex flex-col gap-1">
     <label className="text-sm font-medium text-gray-700">
-      Contact Number <span className="text-red-500">*</span>
+      Contact Number 
     </label>
     <input
       {...register('contact')}
@@ -304,7 +304,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
       className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
       placeholder="Enter Contact Number"
     />
-    {errors.contact && <p className="text-red-500 text-xs">{errors.contact.message}</p>}
+    
   </div>
 
  
@@ -399,7 +399,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
     onRowClicked={(row) => navigate(`/loan-summary/${row._id}`, {
     state: {
       customerCode: row.empCode,
-      customerName: `${row.firstName} ${row.lastName}`
+      customerName: row.initialsName
     }
   })}
     customStyles={{
