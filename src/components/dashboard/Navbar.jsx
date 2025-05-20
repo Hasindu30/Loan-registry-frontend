@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/authContext';
 import { useSidebar } from '../../context/SidebarContext';
 import { useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react'; 
+import logo from '../../assets/logo1.png'
+import logo2 from '../../assets/logo2.png'
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -28,9 +29,21 @@ const Navbar = () => {
           ${isHovered ? 'ml-64 w-[calc(100%-16rem)]' : 'ml-20 w-[calc(100%-5rem)]'}
         `}
       >
+         {/* Left: Welcome */}
         <div className="flex items-center gap-4">
           <p className="text-gray-700 font-medium">Welcome, {user?.name}</p>
         </div>
+
+        {/* Center: Logo */}
+        <div className="absolute left-1/2 transform -translate-x-1/2">
+          <img
+            src={logo2}
+            alt="Hasindu Book Shop"
+            className="h-60 object-contain"
+          />
+        </div>
+
+        {/* Right: Logout */}
         <div>
           <button
             onClick={openConfirm}

@@ -6,7 +6,7 @@ import { useSidebar } from '../../context/SidebarContext';
 
 const menuItems = [
   { name: 'Dashboard', icon: <Home size={25} />, path: '/admin-dashboard' },
-  { name: 'Customers', icon: <Users size={25} />, path: '/customer' },
+  { name: 'Customers Loan', icon: <Users size={25} />, path: '/customer' },
   { name: 'Salary', icon: <DollarSign size={25} />, path: '/admin/salary' },
   { name: 'Settings', icon: <Settings size={25} />, path: '/admin/settings' },
 ];

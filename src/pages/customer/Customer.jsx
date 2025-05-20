@@ -61,7 +61,6 @@ const Customer = () => {
     initialsName: yup.string().required('Name with Initials is required'),
     contact: yup
       .number()
-      .typeError('Contact must be a number')
       ,
     address: yup.string(), 
   });
@@ -378,7 +377,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
                 setSearch(value);
                 fetchCustomers(value);
               }}
-              className="border border-gray-300 p-1 rounded-md w-50 focus:outline-none focus:ring-0 focus:ring-blue-200"
+              className="border border-gray-300 p-1 rounded-md w-50 focus:outline-none focus:ring-0 bg-white focus:ring-blue-200"
           />
           <button 
           onClick={() => setIsPopupOpen(true)}
