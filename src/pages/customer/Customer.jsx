@@ -61,6 +61,7 @@ const Customer = () => {
     initialsName: yup.string().required('Name with Initials is required'),
     contact: yup
       .number()
+      .nullable()
       ,
     address: yup.string(), 
   });

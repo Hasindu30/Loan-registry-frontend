@@ -18,6 +18,7 @@ const LoanSummary = () => {
   const location = useLocation();
   const [data, setData] = useState([]);
    const [loading, setLoading] = useState(false);
+   const [downloading, setDownloading] = useState(false);
   const { customerCode, customerName } = location.state || {};
   const [search, setSearch] = useState('');
   const [filteredData, setFilteredData] = useState([]);
@@ -340,9 +341,44 @@ useEffect(() => {
   });
   setFilteredData(filtered);
 }, [data, selectedYear, selectedMonth]);
+const handleDownload = async () => {
+  try {
+    setDownloading(true);
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/loan-summary-pdf`,
+      {
+        params: { customerCode, customerName },
+        responseType: 'blob',
+      }
+    );
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Loan_Summary_${customerCode}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+  } catch (err) {
+    toast.error("Failed to download report");
+    console.error(err);
+  } finally {
+    setDownloading(false);
+  }
+};
+
+
 
   return (
     <>
+     <>
+    { downloading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="relative w-15 h-15">
+        <div className="absolute inset-0 rounded-full border-[9px] border-t-transparent border-l-transparent border-r-blue-500 border-b-cyan-400 animate-spin" />
+        <div className="absolute inset-[6px] bg-white rounded-full shadow-inner" />
+      </div>
+    </div>
+        )}
+    </>
       <ToastContainer />
       <SidePopup
         isOpen={isLoanPopupOpen}
@@ -495,8 +531,8 @@ useEffect(() => {
               <h2 className="text-2xl font-bold">Loan Summary |   {customerName} ({customerCode})</h2>
             </div>
 
-            <div className="mb-4 flex flex-wrap gap-4 justify-between items-center">
-  <div className="flex gap-4 items-center flex-wrap">
+<div className="mb-4 flex flex-wrap items-center gap-4 justify-between">
+  <div className="flex gap-4 flex-wrap items-center">
     <input
       type="text"
       placeholder="Search..."
@@ -528,13 +564,24 @@ useEffect(() => {
     </select>
   </div>
 
-  <button
-    onClick={() => setIsLoanPopupOpen(true)}
-    className="bg-red-600 text-white px-3 py-2 rounded hover:bg-teal-700 flex items-center gap-2 text-sm"
-  >
-    <Plus size={18} /> Add Loan
-  </button>
+  <div className="flex items-center gap-3 ml-auto">
+    
+    <button
+      onClick={handleDownload}
+      
+      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+    >
+      {downloading ? 'Downloading...' : 'Download PDF'}
+    </button>
+    <button
+      onClick={() => setIsLoanPopupOpen(true)}
+      className="bg-red-600 text-white px-3 py-2 rounded hover:bg-teal-700 flex items-center gap-2 text-sm"
+    >
+      <Plus size={18} /> Add Loan
+    </button>
+  </div>
 </div>
+
 
             <DataTable
               columns={loanColumns}
