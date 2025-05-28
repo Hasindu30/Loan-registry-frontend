@@ -6,6 +6,7 @@ import PrivateRoutes from "../src/utils/PrivateRoutes";
 import RoleBaseRoutes from "../src/utils/RoleBaseRoutes"
 import Customer from "./pages/customer/Customer";
 import LoanSummary from "./pages/customer/LoanSummary";
+import Finance from "./pages/Finance/Finance";
 import ChatBot from "./components/chabot/Chatbot";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
           } />
           <Route path="/customer" element={<Customer/>} />
           <Route path="/loan-summary/:id" element={<LoanSummary/>} />
+          <Route path="/finance" element={<Finance/>} />
     </Routes>
     </SidebarProvider>
   

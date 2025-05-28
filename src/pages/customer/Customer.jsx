@@ -410,7 +410,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
     },
     headCells: {
       style: {
-        backgroundColor: '#0fcea0',
+        backgroundColor: '#808080',
         color: '#ffffff',
         fontWeight: '600',
         fontSize: '14px',
