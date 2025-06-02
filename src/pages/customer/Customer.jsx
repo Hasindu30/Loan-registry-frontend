@@ -378,7 +378,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
                 setSearch(value);
                 fetchCustomers(value);
               }}
-              className="border border-gray-300 p-1 rounded-md w-50 focus:outline-none focus:ring-0 bg-white focus:ring-blue-200"
+              className="border border-gray-300 p-1 rounded-full w-50 focus:outline-none focus:ring-0 bg-white focus:ring-blue-200"
           />
           <button 
           onClick={() => setIsPopupOpen(true)}
@@ -406,6 +406,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
     headRow: {
       style: {
         minHeight: '40px', 
+        
       },
     },
     headCells: {
@@ -416,7 +417,7 @@ title={isEditMode ? "Edit Customer" : "Create Customer"}
         fontSize: '14px',
         paddingTop: '8px',
         paddingBottom: '8px',
-        textTransform:"uppercase"
+        textTransform:"uppercase",
       },
     },
     rows: {
