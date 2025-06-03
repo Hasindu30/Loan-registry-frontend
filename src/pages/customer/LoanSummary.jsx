@@ -12,6 +12,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import api from '../../components/api';
 
 const LoanSummary = () => {
   const { isHovered } = useSidebar();
@@ -105,7 +106,7 @@ const confirmDeletePayment = async () => {
   if (!paymentToDelete) return;
 
   try {
-    await axios.delete(`/api/paymentDelete/${paymentToDelete}`);
+    await api.delete(`/paymentDelete/${paymentToDelete}`);
     toast.success("Payment deleted successfully");
     fetchPayments();
   } catch (err) {
@@ -148,7 +149,7 @@ const handleDelete = (id) => {
 const confirmDelete = async () => {
   if (!loanToDelete) return;
   try {
-    await axios.delete(`/api/loanDelete/${loanToDelete}`);
+    await api.delete(`/loanDelete/${loanToDelete}`);
     toast.success("Loan deleted successfully");
     fetchLoans();
   } catch (error) {
@@ -204,14 +205,14 @@ const onSubmit = async (data) => {
   if (isPaymentPopupOpen) {
     try {
     if (selectedPaymentId) {
-      await axios.put(`/api/paymentUpdate/${selectedPaymentId}`, {
+      await api.put(`/paymentUpdate/${selectedPaymentId}`, {
         customerCode,
         amount: data.PaymentAmount,
         date: data.paymentDate,
       });
       toast.success("Payment updated");
     } else {
-      await axios.post('/api/payments', {
+      await api.post('/payments', {
         customerCode,
         amount: data.PaymentAmount,
         date: data.paymentDate,
@@ -239,14 +240,14 @@ const onSubmit = async (data) => {
   try {
       if (isEditMode) {
        
-        await axios.put(`/api/loanUpdate/${selectedLoanId}`, LoanData);
+        await api.put(`/loanUpdate/${selectedLoanId}`, LoanData);
   
         toast.success('Loan updated successfully!', {
           position: "top-right",
           autoClose: 3000,
         });
       } else {
-        await axios.post('/api/loans', LoanData);
+        await api.post('/loans', LoanData);
   
         toast.success('loan created successfully!', {
           position: "top-right",

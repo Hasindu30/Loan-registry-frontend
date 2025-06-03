@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
+import api from '../../components/api'
 
 const Customer = () => {
   const { isHovered } = useSidebar(); 
@@ -29,7 +30,7 @@ const Customer = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/allcustomer',{
+      const response = await api.get('/allcustomer',{
         params: { search },
       });
       setData(response.data);
@@ -152,7 +153,7 @@ const Customer = () => {
             return;
           }
       
-          await axios.delete(`/api/customerDelete/${deleteCustomerId}`);
+          await api.delete(`/customerDelete/${deleteCustomerId}`);
       
           toast.success('Customer deleted successfully!', {
             position: "top-right",
@@ -186,14 +187,14 @@ const Customer = () => {
     try {
       if (isEditMode) {
        
-        await axios.put(`/api/customerUpdate/${selectedCustomerId}`, CustomerData);
+        await api.put(`/customerUpdate/${selectedCustomerId}`, CustomerData);
   
         toast.success('Customer updated successfully!', {
           position: "top-right",
           autoClose: 3000,
         });
       } else {
-        await axios.post('/api/Customer', CustomerData);
+        await api.post('/Customer', CustomerData);
   
         toast.success('Customer created successfully!', {
           position: "top-right",
