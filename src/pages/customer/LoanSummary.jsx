@@ -71,7 +71,7 @@ useEffect(() => {
   const fetchLoans = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/allloans',{
+      const response = await api.get('/allloans',{
       params: { customerCode } 
         
       });
@@ -89,7 +89,7 @@ useEffect(() => {
   }, []);
      const fetchPayments = async () => {
   try {
-    const response = await axios.get('/api/allpayments', {
+    const response = await api.get('/allpayments', {
       params: { customerCode }
     });
     setPaymentData(response.data);
