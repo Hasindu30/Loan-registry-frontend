@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useAuth } from "../context/authContext";
 import { useNavigate } from "react-router-dom";
 import logo2 from '../assets/logo2.png'
+import api from "../components/api";
 
 const Login = () => {
 const [email,setEmail] = useState('')
@@ -13,7 +14,7 @@ const navigate = useNavigate();
 const handleSubmit = async (e) =>{
     e.preventDefault()
     try {
-      const response = await axios.post("/auth/login",
+      const response = await api.post("/auth/login",
         {email,password}
       );
       if(response.data.success){
