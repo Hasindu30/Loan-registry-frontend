@@ -13,7 +13,7 @@ const navigate = useNavigate();
 const handleSubmit = async (e) =>{
     e.preventDefault()
     try {
-      const response = await axios.post("/api/auth/login",
+      const response = await axios.post("/auth/login",
         {email,password}
       );
       if(response.data.success){
