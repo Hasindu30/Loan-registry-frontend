@@ -12,6 +12,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import axios from 'axios';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import api from '../../components/api'
 
 const Finance = () => {
   const { isHovered } = useSidebar();
@@ -26,11 +27,11 @@ const Finance = () => {
    const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-   const [selectedLoanId, setSelectedLoanId] = useState(null); 
-const [isLoanPopupOpen, setIsLoanPopupOpen] = useState(false);
+   const [selectedIncomeId, setSelectedIncomeId] = useState(null); 
+const [isIncomePopupOpen, setIsIncomePopupOpen] = useState(false);
 const [isPaymentPopupOpen, setIsPaymentPopupOpen] = useState(false);
 const [selectedPaymentId, setSelectedPaymentId] = useState(null);
- const [loanToDelete, setLoanToDelete] = useState(null);
+ const [IncomeToDelete, setIncomeToDelete] = useState(null);
 const [isPaymentDeletePopupOpen, setIsPaymentDeletePopupOpen] = useState(false);
 const [paymentToDelete, setPaymentToDelete] = useState(null);
 const [selectedYear, setSelectedYear] = useState('');
@@ -57,20 +58,20 @@ useEffect(() => {
   } else {
     const lowerSearch = search.toLowerCase();
     const filtered = data.filter(item =>
-      item.loanName.toLowerCase().includes(lowerSearch)
+      item.IncomeName.toLowerCase().includes(lowerSearch)
     );
     setFilteredData(filtered);
   }
 }, [search, data]);
 
   useEffect(() => {
-    fetchLoans();
+    fetchIncomes();
     
   }, []);
-  const fetchLoans = async () => {
+  const fetchIncomes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/allloans',{
+      const response = await api.get('/income/getAll',{
       params: { customerCode } 
         
       });
@@ -88,12 +89,12 @@ useEffect(() => {
   }, []);
      const fetchPayments = async () => {
   try {
-    const response = await axios.get('/api/allpayments', {
+    const response = await api.get('/expenses/getAll', {
       params: { customerCode }
     });
     setPaymentData(response.data);
   } catch (err) {
-    toast.error("Failed to load payments");
+    toast.error("Failed to load Expenses Transactions");
   }
 };
 const handleDeletePayment = (id) => {
@@ -105,7 +106,7 @@ const confirmDeletePayment = async () => {
   if (!paymentToDelete) return;
 
   try {
-    await axios.delete(`/api/paymentDelete/${paymentToDelete}`);
+    await api.delete(`/income/delete/${paymentToDelete}`);
     toast.success("Payment deleted successfully");
     fetchPayments();
   } catch (err) {
@@ -128,40 +129,40 @@ const handleEditPayment = (payment) => {
 
   const handleEdit = (row) => {
       setIsEditMode(true);                   
-      setSelectedLoanId(row._id);         
-      setIsLoanPopupOpen(true);                  
+      setSelectedIncomeId(row._id);         
+      setIsIncomePopupOpen(true);                  
     
       // Prefill data
        const dateObj = new Date(row.date);
   const formattedDate = dateObj.toISOString().slice(0, 10); 
 
-      setLoanValue('loanName', row.loanName);
-       setLoanValue('amount', row.amount);
-       setLoanValue('date', formattedDate);
-      setLoanValue('remarks', row.remarks || '');
+      setIncomeValue('name', row.name);
+       setIncomeValue('amount', row.amount);
+       setIncomeValue('date', formattedDate);
+      
       
     };
 const handleDelete = (id) => {
-  setLoanToDelete(id);
+  setIncomeToDelete(id);
   setIsDeletePopupOpen(true);
 };
 const confirmDelete = async () => {
-  if (!loanToDelete) return;
+  if (!IncomeToDelete) return;
   try {
-    await axios.delete(`/api/loanDelete/${loanToDelete}`);
-    toast.success("Loan deleted successfully");
-    fetchLoans();
+    await api.delete(`/income/delete/${IncomeToDelete}`);
+    toast.success("Income deleted successfully");
+    fetchIncomes();
   } catch (error) {
     console.error(error);
-    toast.error("Failed to delete loan");
+    toast.error("Failed to delete Income");
   } finally {
     setIsDeletePopupOpen(false);
-    setLoanToDelete(null);
+    setIncomeToDelete(null);
   }
 };
 
-  const loanSchema = yup.object().shape({
-  loanName: yup.string().required('Loan name is required'),
+  const IncomeSchema = yup.object().shape({
+  name: yup.string().required('Income name is required'),
   amount: yup
     .number()
     .typeError('Amount must be a number')
@@ -180,12 +181,12 @@ const paymentSchema = yup.object().shape({
   paymentDate: yup.string().required('Payment date is required')
 });
  const {
-  register: registerLoan,
-  handleSubmit: handleSubmitLoan,
-  reset: resetLoan,
-  setValue: setLoanValue,
-  formState: { errors: loanErrors }
-} = useForm({ resolver: yupResolver(loanSchema) });
+  register: registerIncome,
+  handleSubmit: handleSubmitIncome,
+  reset: resetIncome,
+  setValue: setIncomeValue,
+  formState: { errors: IncomeErrors }
+} = useForm({ resolver: yupResolver(IncomeSchema) });
 
 const {
   register: registerPayment,
@@ -211,7 +212,7 @@ const onSubmit = async (data) => {
       });
       toast.success("Payment updated");
     } else {
-      await axios.post('/api/payments', {
+      await api.post('/expenses', {
         customerCode,
         amount: data.PaymentAmount,
         date: data.paymentDate,
@@ -229,51 +230,50 @@ const onSubmit = async (data) => {
   return;
 }
 
-    const LoanData = {
-      loanName:data.loanName,
+    const IncomeData = {
+      name:data.name,
       date:data.date,
       amount:data.amount,
-      remarks:data.remarks,
-      customerCode: customerCode,
+      
     };
   try {
       if (isEditMode) {
        
-        await axios.put(`/api/loanUpdate/${selectedLoanId}`, LoanData);
+        await api.put(`/income/update/${selectedIncomeId}`, IncomeData);
   
-        toast.success('Loan updated successfully!', {
+        toast.success('Income updated successfully!', {
           position: "top-right",
           autoClose: 3000,
         });
       } else {
-        await axios.post('/api/loans', LoanData);
+        await api.post('/income', IncomeData);
   
-        toast.success('loan created successfully!', {
+        toast.success('Income created successfully!', {
           position: "top-right",
           autoClose: 3000,
         });
       }
   
-      setIsLoanPopupOpen(false);
+      setIsIncomePopupOpen(false);
       setIsEditMode(false);
-      fetchLoans();  
-      resetLoan();           
+      fetchIncomes();  
+      resetIncome();           
       
     } catch (error) {
       console.error(error);
-      toast.error('Failed to create or update Loans!', {
+      toast.error('Failed to create or update Incomes!', {
         position: "top-center",
         autoClose: false,
       });
     }
   };
   
- const onSubmitLoan = (data) => onSubmit(data);
+ const onSubmitIncome = (data) => onSubmit(data);
 const onSubmitPayment = (data) => onSubmit(data);
 
 
-  const loanColumns = [
-    { name: 'Name', selector: (row) => row.loanName, sortable: true },
+  const incomeColumns = [
+    { name: 'Name', selector: (row) => row.name, sortable: true },
     { name: 'Date', selector: (row) => new Date(row.date).toLocaleDateString(), sortable: true },
    { name: 'Amount', selector: (row) => `Rs. ${formatCurrency(row.amount)}`, sortable: true },
     
@@ -299,7 +299,7 @@ const onSubmitPayment = (data) => onSubmit(data);
     }
   ];
 
-  const paymentColumns = [
+  const expenseColumns = [
     { name: 'Payment Date', selector: (row) => new Date(row.date).toLocaleDateString('en-CA'), sortable: true },
     { name: 'Amount', selector: (row) => `Rs. ${formatCurrency(row.amount)}`, sortable: true, },
     {
@@ -318,16 +318,16 @@ const onSubmitPayment = (data) => onSubmit(data);
 }
   ];
 
- const totalLoanAmount = data.reduce((sum, item) => sum + (item.amount || 0), 0);
+ const totalIncomeAmount = data.reduce((sum, item) => sum + (item.amount || 0), 0);
   const totalPaidAmount = paymentData.reduce((sum, item) => sum + item.amount, 0);
-  const remainingAmount = totalLoanAmount - totalPaidAmount;
+  const remainingAmount = totalIncomeAmount - totalPaidAmount;
   const handleSearch = (value) => {
   setSearch(value);
   if (!value.trim()) {
     setFilteredData(data);
   } else {
     const filtered = data.filter((item) =>
-      item.loanName?.toLowerCase().includes(value.toLowerCase())
+      item.IncomeName?.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredData(filtered);
   }
@@ -381,43 +381,40 @@ const handleDownload = async () => {
     </>
       <ToastContainer />
       <SidePopup
-        isOpen={isLoanPopupOpen}
+        isOpen={isIncomePopupOpen}
         onClose={() => {
-    setIsLoanPopupOpen(false);
+    setIsIncomePopupOpen(false);
     setIsEditMode(false);
-    resetLoan();
+    resetIncome();
   }}
-        title={isEditMode ? 'Edit Loan' : 'Add Loan'}
+        title={isEditMode ? 'Edit Income' : 'Add Income'}
       >
-        <form onSubmit={handleSubmitLoan(onSubmitLoan)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmitIncome(onSubmitIncome)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Loan Name <span className="text-red-500">*</span></label>
-            <input {...registerLoan('loanName')} 
+            <label className="text-sm font-medium text-gray-700">Income Name <span className="text-red-500">*</span></label>
+            <input {...registerIncome('name')} 
             type="text" 
             className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" 
-            placeholder="Enter Loan Name" />
-            {loanErrors.loanName && <p className="text-red-500 text-xs">{loanErrors.loanName.message}</p>}
+            placeholder="Enter Income Name" />
+            {IncomeErrors.IncomeName && <p className="text-red-500 text-xs">{IncomeErrors.IncomeName.message}</p>}
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Amount <span className="text-red-500">*</span></label>
             <input 
-            {...registerLoan('amount')} 
+            {...registerIncome('amount')} 
             type="number" 
             step="0.01"
             className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" 
             placeholder="Enter Amount" />
-            {loanErrors.amount && <p className="text-red-500 text-xs">{loanErrors.amount.message}</p>}
+            {IncomeErrors.amount && <p className="text-red-500 text-xs">{IncomeErrors.amount.message}</p>}
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Date <span className="text-red-500">*</span></label>
             <input 
-            {...registerLoan('date')} type="date" className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" />
-            {loanErrors.date && <p className="text-red-500 text-xs">{loanErrors.date.message}</p>}
+            {...registerIncome('date')} type="date" className="border rounded-md px-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400" />
+            {IncomeErrors.date && <p className="text-red-500 text-xs">{IncomeErrors.date.message}</p>}
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Remarks</label>
-            <textarea {...registerLoan('remarks')} className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="Optional remarks"></textarea>
-          </div>
+          
           <div className="flex justify-end mt-4">
             <button type="submit" className="bg-teal-600 text-white px-6 py-2 rounded hover:bg-teal-700 transition text-sm">
               {isEditMode ? 'Update' : 'Create'}
@@ -463,19 +460,19 @@ const handleDownload = async () => {
   isOpen={isDeletePopupOpen}
   onClose={() => {
     setIsDeletePopupOpen(false);
-    setLoanToDelete(null);
+    setIncomeToDelete(null);
   }}
-  title="Delete Loan"
+  title="Delete Income"
 >
   <div className="flex flex-col items-center justify-center gap-6 p-6">
     <p className="text-gray-700 text-center text-lg">
-      Are you sure you want to delete this loan?
+      Are you sure you want to delete this Income?
     </p>
     <div className="flex justify-center gap-4">
       <button
         onClick={() => {
           setIsDeletePopupOpen(false);
-          setLoanToDelete(null);
+          setIncomeToDelete(null);
         }}
         className="px-6 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
       >
@@ -574,17 +571,17 @@ const handleDownload = async () => {
       {downloading ? 'Downloading...' : 'Download PDF'}
     </button>
     <button
-      onClick={() => setIsLoanPopupOpen(true)}
+      onClick={() => setIsIncomePopupOpen(true)}
       className="bg-red-600 text-white px-3 py-2 rounded hover:bg-teal-700 flex items-center gap-2 text-sm"
     >
-      <Plus size={18} /> Add Loan
+      <Plus size={18} /> Add Income
     </button>
   </div>
 </div>
 
 
             <DataTable
-              columns={loanColumns}
+              columns={incomeColumns}
               data={filteredData}
               pagination
               highlightOnHover
@@ -608,19 +605,19 @@ const handleDownload = async () => {
             />
 
             <div className="text-right mt-2 text-lg font-semibold">
-              Total Loan Amount: Rs. {totalLoanAmount.toLocaleString()}
+              Total Income Amount: Rs. {totalIncomeAmount.toLocaleString()}
             </div>
 
             <div className="mt-10">
               <div className="mb-4 flex justify-between items-center">
-                <h3 className="text-xl font-bold">Loan Payment History</h3>
+                <h3 className="text-xl font-bold">Expenses</h3>
                 <button onClick={() => setIsPaymentPopupOpen(true)} className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-teal-700 flex items-center gap-2 text-sm">
-                <Plus size={18} /> Add Payment
+                <Plus size={18} /> Add Expenses
               </button> 
               </div>
 
               <DataTable
-                columns={paymentColumns}
+                columns={expenseColumns}
                 data={paymentData}
                 pagination
                 highlightOnHover
@@ -651,12 +648,12 @@ const handleDownload = async () => {
           </div>
   <div className="flex justify-center mt-10 mb-10">
   <div className="bg-white rounded-xl shadow-md p-6 w-full max-w-md border border-gray-100 text-center">
-    <h2 className="text-2xl font-bold text-gray-800 mb-6">Loan Summary</h2>
+    <h2 className="text-2xl font-bold text-gray-800 mb-6">Income Summary</h2>
 
     <div className="flex justify-between items-center mb-4 text-lg">
-      <span className="font-medium text-gray-600">Total Loan Amount</span>
+      <span className="font-medium text-gray-600">Total Income Amount</span>
       <span className="font-bold text-gray-900">
-        Rs. {totalLoanAmount.toLocaleString()}
+        Rs. {totalIncomeAmount.toLocaleString()}
       </span>
     </div>
 
@@ -672,7 +669,7 @@ const handleDownload = async () => {
     <div className="flex justify-between items-center text-xl font-semibold">
       <span className="text-gray-800">Remaining Balance</span>
       <span className="text-red-600">
-        = Rs. {(totalLoanAmount - totalPaidAmount).toLocaleString()}
+        = Rs. {(totalIncomeAmount - totalPaidAmount).toLocaleString()}
       </span>
     </div>
   </div>
